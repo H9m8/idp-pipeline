@@ -1,0 +1,168 @@
+{
+  "name": "01_intake",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intake",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "binaryPropertyName": "file",
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -128
+      ],
+      "id": "2115d4fa-fee8-483a-be3d-83c73e854acc",
+      "name": "Webhook",
+      "webhookId": "7612f7c3-efa5-4560-bafe-a0fcdc29b810"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO documents (status, file_name, mime_type, file_size, doc_type)\nVALUES ('received', $1, $2, $3, 'unknown')\nRETURNING id, status, created_at;",
+        "options": {
+          "queryReplacement": "={{ $json.file_name }},{{ $json.mime_type }},{{ $json.file_size }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        48,
+        -128
+      ],
+      "id": "1f133fbe-2c01-4911-9e7f-c15acf0542b8",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"{{ $json.status }}\",\n  \"document_id\": \"{{ $json.id }}\",\n  \"file_name\": \"{{ $('Code in JavaScript').item.json.file_name }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        256,
+        -128
+      ],
+      "id": "3447a4a6-9929-4502-b186-857037bac08e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f0a025d-8798-4a49-b0ca-2764046c829f",
+              "name": "file_name",
+              "value": "={{ $binary.file.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "000986b9-f145-4809-aee0-b411fb8f52f9",
+              "name": "mime_type",
+              "value": "={{ $binary.file.mimeType }}",
+              "type": "string"
+            },
+            {
+              "id": "b548f50e-6f89-45bd-b676-2de411ebf6d3",
+              "name": "file_size",
+              "value": "={{ $binary.file.fileSize || 0 }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -272
+      ],
+      "id": "273f4515-6c30-48d8-b6e9-df5078e18f95",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const binaryData = $input.item.binary;\n\nif (!binaryData || Object.keys(binaryData).length === 0) {\n  throw new Error('No binary file received.');\n}\n\nconst fileKey = Object.keys(binaryData)[0];  // grabs \"file0\" automatically\nconst file = binaryData[fileKey];\n\nreturn {\n  json: {\n    file_name: file?.fileName ?? 'unknown.pdf',\n    mime_type: file?.mimeType ?? 'application/octet-stream',\n    file_size: Number(file?.fileSize) || 0,\n  },\n  binary: binaryData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        -32
+      ],
+      "id": "46d7100a-fe44-4fac-ae47-c3ea4c9c9d51",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5398ba97-6cbb-499c-9bd8-3353a5dbb921",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1afbc0143798df2d957fbad06d54ee24dc69ed3c9c62e5f822ecb7361beffb24"
+  },
+  "id": "JIQfI5I6MS723ITL",
+  "tags": []
+}
