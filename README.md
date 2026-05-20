@@ -11,7 +11,7 @@ n8n · OpenAI · Supabase (Postgres + pgvector) · GitHub Actions
 ## Status
 - [x] Phase 0 — environment & accounts
 - [x] Phase 1 — schema & intake webhook
-- [ ] Phase 2 — extraction agent
+- [x] Phase 2 — extraction agent
 - [ ] Phase 3 — validation & tests
 - [ ] Phase 4 — RAG & anomaly detection
 - [ ] Phase 5 — natural language query agent
