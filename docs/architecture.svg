@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="IDP Pipeline architecture diagram">
+  <title>IDP Pipeline — Architecture</title>
+  <desc>Three n8n workflows around a shared Supabase Postgres database with pgvector. An ingestion pipeline extracts, validates, embeds and stores invoice PDFs; a query agent answers natural-language questions with SQL and RAG tools plus memory; a scheduled keep-alive pings the database.</desc>
+
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .bg    { fill: #0f1116; }
+      .title { fill: #f3f4f6; font-size: 26px; font-weight: 700; }
+      .sub   { fill: #9aa1ad; font-size: 13px; }
+      .lane  { fill: #9aa1ad; font-size: 12px; font-weight: 600; letter-spacing: 1.5px; }
+      .card  { stroke-width: 1; rx: 9; }
+      .ct    { fill: #f3f4f6; font-size: 13.5px; font-weight: 600; }
+      .cs    { fill: #aab0bb; font-size: 11px; }
+      .flow  { stroke: #6b7280; stroke-width: 1.6; fill: none; }
+      .legend{ fill: #9aa1ad; font-size: 11.5px; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1000" height="720"/>
+
+  <!-- header -->
+  <text class="title" x="40" y="52">IDP Pipeline</text>
+  <text class="sub"   x="40" y="74">Intelligent Document Processing · n8n · OpenAI · Supabase (Postgres + pgvector) · GitHub Actions</text>
+  <line x1="40" y1="90" x2="960" y2="90" stroke="#23262e" stroke-width="1"/>
+
+  <!-- ============ INGESTION LANE ============ -->
+  <text class="lane" x="40" y="124">① INGESTION  ·  workflow 02</text>
+
+  <!-- nodes -->
+  <g>
+    <rect class="card" x="40"  y="138" width="120" height="56" rx="9" fill="#11212b" stroke="#1f4b5c"/>
+    <text class="ct" x="100" y="162" text-anchor="middle">Webhook</text>
+    <text class="cs" x="100" y="180" text-anchor="middle">PDF upload</text>
+
+    <rect class="card" x="188" y="138" width="120" height="56" rx="9" fill="#11212b" stroke="#1f4b5c"/>
+    <text class="ct" x="248" y="162" text-anchor="middle">Extract text</text>
+    <text class="cs" x="248" y="180" text-anchor="middle">from PDF</text>
+
+    <rect class="card" x="336" y="138" width="130" height="56" rx="9" fill="#162a1c" stroke="#2c5a39"/>
+    <text class="ct" x="401" y="162" text-anchor="middle">LLM extractor</text>
+    <text class="cs" x="401" y="180" text-anchor="middle">forced JSON</text>
+
+    <rect class="card" x="494" y="138" width="120" height="56" rx="9" fill="#2a2417" stroke="#5c4d22"/>
+    <text class="ct" x="554" y="162" text-anchor="middle">Validate</text>
+    <text class="cs" x="554" y="180" text-anchor="middle">math checks</text>
+
+    <rect class="card" x="642" y="138" width="130" height="56" rx="9" fill="#241a2b" stroke="#4d2c5c"/>
+    <text class="ct" x="707" y="162" text-anchor="middle">Embed + RAG</text>
+    <text class="cs" x="707" y="180" text-anchor="middle">duplicate check</text>
+
+    <rect class="card" x="800" y="138" width="120" height="56" rx="9" fill="#11212b" stroke="#1f4b5c"/>
+    <text class="ct" x="860" y="162" text-anchor="middle">Store</text>
+    <text class="cs" x="860" y="180" text-anchor="middle">to database</text>
+  </g>
+
+  <!-- ingestion arrows -->
+  <path class="flow" d="M160 166 H188" marker-end="url(#ah)"/>
+  <path class="flow" d="M308 166 H336" marker-end="url(#ah)"/>
+  <path class="flow" d="M466 166 H494" marker-end="url(#ah)"/>
+  <path class="flow" d="M614 166 H642" marker-end="url(#ah)"/>
+  <path class="flow" d="M772 166 H800" marker-end="url(#ah)"/>
+
+  <!-- ============ DATABASE (center) ============ -->
+  <g>
+    <rect x="330" y="300" width="340" height="92" rx="12" fill="#0d1a22" stroke="#2f6b82" stroke-width="1.5"/>
+    <text x="500" y="332" text-anchor="middle" fill="#e6f0f4" font-size="16" font-weight="700">Supabase · Postgres + pgvector</text>
+    <text x="500" y="356" text-anchor="middle" fill="#9fb8c4" font-size="11.5">documents · line_items · vendors · extraction_runs · anomalies</text>
+    <text x="500" y="374" text-anchor="middle" fill="#9fb8c4" font-size="11.5">embeddings (vector) · match_documents() · chat memory</text>
+  </g>
+
+  <!-- store -> db -->
+  <path class="flow" d="M860 194 V250 Q860 300 700 300" marker-end="url(#ah)"/>
+
+  <!-- ============ QUERY AGENT LANE ============ -->
+  <text class="lane" x="40" y="470">② QUERY AGENT  ·  workflow 03</text>
+
+  <g>
+    <rect class="card" x="40" y="486" width="120" height="56" rx="9" fill="#1c1f26" stroke="#3a3f4b"/>
+    <text class="ct" x="100" y="510" text-anchor="middle">Chat trigger</text>
+    <text class="cs" x="100" y="528" text-anchor="middle">user asks</text>
+
+    <rect class="card" x="220" y="480" width="150" height="68" rx="9" fill="#162a1c" stroke="#2c5a39"/>
+    <text class="ct" x="295" y="508" text-anchor="middle">AI Agent</text>
+    <text class="cs" x="295" y="528" text-anchor="middle">chooses tools</text>
+  </g>
+  <path class="flow" d="M160 514 H220" marker-end="url(#ah)"/>
+
+  <!-- agent sub-nodes -->
+  <g>
+    <rect class="card" x="220" y="600" width="150" height="50" rx="9" fill="#241a2b" stroke="#4d2c5c"/>
+    <text class="ct" x="295" y="622" text-anchor="middle">Chat model + Memory</text>
+    <text class="cs" x="295" y="638" text-anchor="middle">gpt-4o-mini · Postgres</text>
+
+    <rect class="card" x="410" y="600" width="120" height="50" rx="9" fill="#2a2417" stroke="#5c4d22"/>
+    <text class="ct" x="470" y="622" text-anchor="middle">SQL tool</text>
+    <text class="cs" x="470" y="638" text-anchor="middle">writes queries</text>
+
+    <rect class="card" x="550" y="600" width="120" height="50" rx="9" fill="#2a2417" stroke="#5c4d22"/>
+    <text class="ct" x="610" y="622" text-anchor="middle">Search tool</text>
+    <text class="cs" x="610" y="638" text-anchor="middle">find documents</text>
+  </g>
+  <path class="flow" stroke-dasharray="4 4" d="M280 548 V600" marker-end="url(#ah)"/>
+  <path class="flow" stroke-dasharray="4 4" d="M310 548 Q310 575 460 600" marker-end="url(#ah)"/>
+  <path class="flow" stroke-dasharray="4 4" d="M330 548 Q330 575 600 600" marker-end="url(#ah)"/>
+
+  <!-- tools -> db -->
+  <path class="flow" d="M470 600 Q470 470 500 392" marker-end="url(#ah)"/>
+  <path class="flow" d="M610 600 Q610 460 560 392" marker-end="url(#ah)"/>
+  <!-- agent reads memory from db -->
+  <path class="flow" d="M295 600 Q150 470 330 360" marker-end="url(#ah)"/>
+
+  <!-- ============ KEEP-ALIVE ============ -->
+  <text class="lane" x="720" y="470">③ KEEP-ALIVE  ·  workflow 04</text>
+  <g>
+    <rect class="card" x="720" y="486" width="100" height="56" rx="9" fill="#1c1f26" stroke="#3a3f4b"/>
+    <text class="ct" x="770" y="510" text-anchor="middle">Schedule</text>
+    <text class="cs" x="770" y="528" text-anchor="middle">daily</text>
+
+    <rect class="card" x="850" y="486" width="100" height="56" rx="9" fill="#11212b" stroke="#1f4b5c"/>
+    <text class="ct" x="900" y="510" text-anchor="middle">Ping</text>
+    <text class="cs" x="900" y="528" text-anchor="middle">SELECT 1</text>
+  </g>
+  <path class="flow" d="M820 514 H850" marker-end="url(#ah)"/>
+  <path class="flow" d="M900 486 Q900 420 670 380" marker-end="url(#ah)"/>
+
+  <!-- legend -->
+  <text class="legend" x="40" y="694">Solid = data flow   ·   dashed = agent sub-nodes (model / memory / tools)</text>
+</svg>
