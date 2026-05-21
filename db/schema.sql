@@ -66,3 +66,26 @@ create index if not exists idx_documents_status on documents(status);
 create index if not exists idx_documents_vendor on documents(vendor_id);
 create index if not exists idx_line_items_doc   on line_items(document_id);
 EOF
+
+-- Phase 4: RAG / vector search
+alter table documents add column if not exists embedding vector(1536);
+
+create index if not exists idx_documents_embedding
+  on documents using ivfflat (embedding vector_cosine_ops) with (lists = 100);
+
+create or replace function match_documents(
+  query_embedding vector(1536),
+  exclude_id uuid,
+  match_count int default 3
+)
+returns table (id uuid, vendor_name text, total numeric, similarity float)
+language sql stable
+as $$
+  select d.id, v.name as vendor_name, d.total,
+         1 - (d.embedding <=> query_embedding) as similarity
+  from documents d
+  left join vendors v on v.id = d.vendor_id
+  where d.embedding is not null and d.id <> exclude_id
+  order by d.embedding <=> query_embedding
+  limit match_count;
+$$;

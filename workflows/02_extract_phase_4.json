@@ -1,0 +1,668 @@
+{
+  "name": "02_extract",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "intake",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*",
+          "binaryPropertyName": "file",
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -5120,
+        -2288
+      ],
+      "id": "2115d4fa-fee8-483a-be3d-83c73e854acc",
+      "name": "Webhook",
+      "webhookId": "7612f7c3-efa5-4560-bafe-a0fcdc29b810"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"{{ $json.status }}\",\n  \"document_id\": \"{{ $json.id }}\",\n  \"file_name\": \"{{ $('Code in JavaScript').item.json.file_name }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -3984,
+        -2208
+      ],
+      "id": "3447a4a6-9929-4502-b186-857037bac08e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6f0a025d-8798-4a49-b0ca-2764046c829f",
+              "name": "file_name",
+              "value": "={{ $binary.file.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "000986b9-f145-4809-aee0-b411fb8f52f9",
+              "name": "mime_type",
+              "value": "={{ $binary.file.mimeType }}",
+              "type": "string"
+            },
+            {
+              "id": "b548f50e-6f89-45bd-b676-2de411ebf6d3",
+              "name": "file_size",
+              "value": "={{ $binary.file.fileSize || 0 }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4832,
+        -2960
+      ],
+      "id": "273f4515-6c30-48d8-b6e9-df5078e18f95",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const binaryData = $input.item.binary;\n\nif (!binaryData || Object.keys(binaryData).length === 0) {\n  throw new Error('No binary file received.');\n}\n\nconst fileKey = Object.keys(binaryData)[0];  // grabs \"file0\" automatically\nconst file = binaryData[fileKey];\n\nreturn {\n  json: {\n    file_name: file?.fileName ?? 'unknown.pdf',\n    mime_type: file?.mimeType ?? 'application/octet-stream',\n    file_size: Number(file?.fileSize) || 0,\n  },\n  binary: binaryData\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4944,
+        -2288
+      ],
+      "id": "46d7100a-fe44-4fac-ae47-c3ea4c9c9d51",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -4784,
+        -2288
+      ],
+      "id": "d20498a5-bde5-4224-95e7-12904ee25477",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -4640,
+        -2080
+      ],
+      "id": "ab9a2b7e-572b-4c2b-9e41-52a10ca50ae6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xPmmolWpjDif5VO0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"type\": \"object\",\n  \"properties\": {\n    \"vendor_name\": { \"type\": \"string\" },\n    \"vendor_tax_id\": { \"type\": [\"string\", \"null\"] },\n    \"doc_type\": { \"type\": \"string\" },\n    \"invoice_date\": { \"type\": [\"string\", \"null\"] },\n    \"currency\": { \"type\": [\"string\", \"null\"] },\n    \"subtotal\": { \"type\": [\"number\", \"null\"] },\n    \"tax\": { \"type\": [\"number\", \"null\"] },\n    \"total\": { \"type\": [\"number\", \"null\"] },\n    \"line_items\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"description\": { \"type\": \"string\" },\n          \"quantity\": { \"type\": [\"number\", \"null\"] },\n          \"unit_price\": { \"type\": [\"number\", \"null\"] },\n          \"amount\": { \"type\": [\"number\", \"null\"] }\n        },\n        \"required\": [\"description\"]\n      }\n    }\n  },\n  \"required\": [\"vendor_name\", \"doc_type\", \"line_items\"]\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -4640,
+        -2288
+      ],
+      "id": "3d30dcb8-e2a0-40a9-9be9-a8dfa51e5a8c",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE documents SET\n  doc_type     = $1,\n  currency     = $2,\n  invoice_date = $3,\n  subtotal     = $4,\n  tax          = $5,\n  total        = $6,\n  raw_text     = $7,\n  status       = 'extracted',\n  updated_at   = now()\nWHERE id = $8\nRETURNING id, status, total;",
+        "options": {
+          "queryReplacement": "={{ $json.output.doc_type }},{{ $json.output.currency }},{{ $json.output.invoice_date }},{{ $json.output.subtotal }},{{ $json.output.tax }},{{ $json.output.total }},{{ $('Extract from File').item.json.text }},{{ $('insert').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -4912,
+        -2800
+      ],
+      "id": "f3b0d4d3-cb67-4a2f-98ee-22c150c44ced",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.line_items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -4320,
+        -1920
+      ],
+      "id": "a66da28c-3ac5-4e1d-9f70-aa3e70a4faf8",
+      "name": "Split Out",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO line_items (document_id, description, quantity, unit_price, amount)\nVALUES (\n  (SELECT id FROM documents ORDER BY created_at DESC LIMIT 1),\n  $1, $2, $3, $4\n);",
+        "options": {
+          "queryReplacement": "={{ $json.description }},{{ $json.quantity }},{{ $json.unit_price }},{{ $json.amount }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3984,
+        -1808
+      ],
+      "id": "694413ad-2f37-4ba2-ba9a-a426007fada4",
+      "name": "Execute a SQL query2",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO extraction_runs (document_id, model, output)\nVALUES ($1, 'gpt-4o-mini', $2);",
+        "options": {
+          "queryReplacement": "={{ [$('insert').item.json.id, JSON.stringify($('Information Extractor').item.json.output)] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3984,
+        -2368
+      ],
+      "id": "89e8b2a3-84c8-4201-b701-ef12bf1295d3",
+      "name": "Execute a SQL query3",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $('Information Extractor').item.json.output;\nconst TOL = 0.02;\nconst toNum = (v) => (v === null || v === undefined || isNaN(Number(v)) ? null : Number(v));\nconst anomalies = [];\n\n// required fields\nif (!data.vendor_name) anomalies.push({ kind: 'missing_field', detail: 'vendor_name missing', severity: 'warning' });\nif (toNum(data.total) === null) anomalies.push({ kind: 'missing_field', detail: 'total missing', severity: 'error' });\nconst items = data.line_items || [];\nif (items.length === 0) anomalies.push({ kind: 'missing_field', detail: 'no line items', severity: 'warning' });\n\n// line items sum vs subtotal\nconst subtotal = toNum(data.subtotal);\nif (subtotal !== null && items.length) {\n  const sum = items.reduce((s, it) => s + (toNum(it.amount) || 0), 0);\n  if (Math.abs(sum - subtotal) > TOL)\n    anomalies.push({ kind: 'line_items_sum_mismatch', detail: `items sum ${sum.toFixed(2)} != subtotal ${subtotal.toFixed(2)}`, severity: 'error' });\n}\n\n// subtotal + tax vs total\nconst tax = toNum(data.tax) || 0;\nconst total = toNum(data.total);\nif (subtotal !== null && total !== null) {\n  const expected = subtotal + tax;\n  if (Math.abs(expected - total) > TOL)\n    anomalies.push({ kind: 'total_mismatch', detail: `expected ${expected.toFixed(2)} != total ${total.toFixed(2)}`, severity: 'error' });\n}\n\n// date\nif (data.invoice_date) {\n  const d = new Date(data.invoice_date);\n  if (isNaN(d.getTime())) anomalies.push({ kind: 'invalid_date', detail: `bad date ${data.invoice_date}`, severity: 'warning' });\n  else if (d > new Date()) anomalies.push({ kind: 'future_date', detail: `future date ${data.invoice_date}`, severity: 'warning' });\n}\n\nconst status = anomalies.length ? 'needs_review' : 'validated';\nreturn { json: { anomalies, status } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4320,
+        -2608
+      ],
+      "id": "6cd946f7-12cf-460a-8700-cb58af81f026",
+      "name": "Validate"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE documents SET status = $1, updated_at = now()\nWHERE id = (SELECT id FROM documents ORDER BY created_at DESC LIMIT 1);",
+        "options": {
+          "queryReplacement": "={{ [$json.status] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3984,
+        -2544
+      ],
+      "id": "dcb9e36d-4ff6-44a0-9c5a-179eaf06df1c",
+      "name": "Execute a SQL query4",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "anomalies",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -3984,
+        -2704
+      ],
+      "id": "016d4b4c-1b25-4d2a-a1b0-95ce15882f0e",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO anomalies (document_id, kind, detail, severity)\nVALUES ((SELECT id FROM documents ORDER BY created_at DESC LIMIT 1), $1, $2, $3);",
+        "options": {
+          "queryReplacement": "={{ [$json.kind, $json.detail, $json.severity] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3760,
+        -2704
+      ],
+      "id": "5ec2012c-11b9-47d1-899b-d27de8d4c51b",
+      "name": "Execute a SQL query5",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"text-embedding-3-small\",\n  \"input\": \"{{ $('Extract from File').item.json.text.replace(/\\n/g, ' ').slice(0, 8000) }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -3984,
+        -2048
+      ],
+      "id": "36aa782f-31f4-49a9-bd57-5a314377b4f1",
+      "name": "HTTP Request",
+      "credentials": {
+        "openAiApi": {
+          "id": "xPmmolWpjDif5VO0",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "db443a9d-2a3d-439b-997f-7596cd20fc67",
+              "leftValue": "={{ $json.similarity }}",
+              "rightValue": 0.95,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3344,
+        -2048
+      ],
+      "id": "57950dc6-fc79-47c7-a3d9-c5e7162408cb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO anomalies (document_id, kind, detail, severity)\nVALUES ($1::uuid, 'duplicate', $2, 'warning');",
+        "options": {
+          "queryReplacement": "={{ [$('insert').item.json.id, 'Possible duplicate of document ' + $json.id + ' (similarity ' + $json.similarity.toFixed(3) + ')'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3136,
+        -2144
+      ],
+      "id": "98eb7934-1cef-45a5-9835-9bed7c765eb6",
+      "name": "flag duplicate",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE documents SET embedding = $1::vector\nWHERE id = $2::uuid;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($('HTTP Request').item.json.data[0].embedding), $('insert').item.json.id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3760,
+        -2064
+      ],
+      "id": "639a6290-0889-495b-860e-796ac881eef4",
+      "name": "store embedding",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM match_documents(\n  $1::vector,\n  $2::uuid,\n  3\n);",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($('HTTP Request').item.json.data[0].embedding), $('insert').item.json.id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3552,
+        -2048
+      ],
+      "id": "7e7d9db2-18f5-400d-8733-d4d3a5fdeac4",
+      "name": "search similar",
+      "alwaysOutputData": false,
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO documents\n  (status, file_name, mime_type, file_size, doc_type, currency, invoice_date, subtotal, tax, total, raw_text)\nVALUES\n  ('extracted', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\nRETURNING id, status, total;",
+        "options": {
+          "queryReplacement": "={{ $('Code in JavaScript').item.json.file_name }},{{ $('Code in JavaScript').item.json.mime_type }},{{ $('Code in JavaScript').item.json.file_size }},{{ $json.output.doc_type }},{{ $json.output.currency }},{{ $json.output.invoice_date }},{{ $json.output.subtotal }},{{ $json.output.tax }},{{ $json.output.total }},{{ $('Extract from File').item.json.text }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -4320,
+        -2288
+      ],
+      "id": "1f133fbe-2c01-4911-9e7f-c15acf0542b8",
+      "name": "insert",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "insert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        []
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query2": {
+      "main": [
+        []
+      ]
+    },
+    "Validate": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query4": {
+      "main": [
+        []
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "store embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "flag duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "store embedding": {
+      "main": [
+        [
+          {
+            "node": "search similar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search similar": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insert": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Execute a SQL query3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7325f2e5-47ca-4f05-b0ff-f6e42e4fd979",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1afbc0143798df2d957fbad06d54ee24dc69ed3c9c62e5f822ecb7361beffb24"
+  },
+  "id": "JIQfI5I6MS723ITL",
+  "tags": []
+}
