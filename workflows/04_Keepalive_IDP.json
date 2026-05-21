@@ -1,0 +1,73 @@
+{
+  "name": "Keepalive_IDP",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 3,
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        -64
+      ],
+      "id": "fda38c78-93b0-4cd9-b440-ffcaf0ae0e76",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT 1 AS keepalive, now() AS pinged_at;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        -64
+      ],
+      "id": "682f29cc-468c-4be6-9050-a3939af9c475",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "HxyKzOFpfZLLD1Vy",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ff922229-4aaf-446f-8d72-fb7ea08f30ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1afbc0143798df2d957fbad06d54ee24dc69ed3c9c62e5f822ecb7361beffb24"
+  },
+  "id": "hnezNrB50cRrIW84",
+  "tags": []
+}
