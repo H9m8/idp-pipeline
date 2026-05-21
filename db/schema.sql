@@ -89,3 +89,11 @@ as $$
   order by d.embedding <=> query_embedding
   limit match_count;
 $$;
+
+-- Phase 5: chat memory for the query agent
+create table if not exists n8n_chat_histories (
+  id          serial primary key,
+  session_id  varchar(255) not null,
+  message     jsonb not null
+);
+create index if not exists idx_chat_session on n8n_chat_histories(session_id);
