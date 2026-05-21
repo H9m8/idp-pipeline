@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run validation tests
+        run: |
+          cd code
+          python -m pytest -v
+
+  validate-workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Validate workflow JSON
+        run: |
+          for f in workflows/*.json; do
+            echo "Validating $f"
+            python -c "import json,sys; json.load(open('$f')); print('  valid JSON')"
+          done
